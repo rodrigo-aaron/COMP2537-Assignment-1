@@ -145,6 +145,8 @@ app.get('/createUser', (req,res) => {
 
 
 app.get('/login', (req,res) => {
+    var loginError = req.session.loginError;
+    delete req.session.loginError;
     var html = `
     log in
     <form action='/loggingin' method='post'>
@@ -154,8 +156,8 @@ app.get('/login', (req,res) => {
     </form>
     `;
 
-    if (req.query.error === 'invalid') {
-        html += '<p>Invalid username/password combination.</p>';
+    if (loginError) {
+        html += `<p style='color:red;'>${loginError}</p>`;
     }
     res.send(html);
 });
@@ -202,7 +204,7 @@ app.post('/loggingin', async (req,res) => {
 	const validationResult = schema.validate(username);
 	if (validationResult.error != null) {
 	   console.log(validationResult.error);
-	   res.redirect("/login?error=invalid");
+	   res.redirect("/login");
 	   return;
 	}
 
@@ -211,7 +213,8 @@ app.post('/loggingin', async (req,res) => {
 	console.log(result);
 	if (result.length != 1) {
 		console.log("user not found");
-		res.redirect("/login?error=invalid");
+        req.session.loginError = 'Invalid username/password combination.';
+		res.redirect("/login");
 		return;
 	}
 	if (await bcrypt.compare(password, result[0].password)) {
@@ -225,7 +228,8 @@ app.post('/loggingin', async (req,res) => {
 	}
 	else {
 		console.log("incorrect password");
-		res.redirect("/login?error=invalid");
+        req.session.loginError = 'Invalid username/password combination.';
+		res.redirect("/login");
 		return;
 	}
 });
